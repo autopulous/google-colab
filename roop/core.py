@@ -27,7 +27,7 @@ import roop.ui as ui
 
 from roop.predictor import predict_image, predict_video
 from roop.processors.frame.core import get_frame_processors_modules
-from roop.utilities import has_image_extension, is_image, is_video, detect_fps, create_video, extract_frames, get_temp_frame_paths, restore_audio, create_temp, move_temp, clean_temp, normalize_output_path
+from roop.utilities import get_temp_directory_path, has_image_extension, is_image, is_video, detect_fps, create_video, extract_frames, get_temp_frame_paths, restore_audio, create_temp, move_temp, clean_temp, normalize_output_path
 
 warnings.filterwarnings('ignore', category=FutureWarning, module='insightface')
 warnings.filterwarnings('ignore', category=UserWarning, module='torchvision')
@@ -177,10 +177,10 @@ def process_video() -> None:
     if roop.globals.reprocess_frames:
         update_status('Checking for frames to reprocess...')
         temp_directory_path = get_temp_directory_path(roop.globals.target_path)
-        if not os.path.isdir(temp_directory) or not os.listdir(temp_directory)::
+        if not os.path.isdir(temp_directory_path) or not os.listdir(temp_directory_path):
             update_status('Processing video halted: did not find frames to reprocess')
             destroy()
-    else
+    else:
         update_status('Creating temporary directory...')
         create_temp(roop.globals.target_path)
 
