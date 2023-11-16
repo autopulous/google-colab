@@ -5,8 +5,10 @@ target_path: Optional[str] = None
 output_path: Optional[str] = None
 headless: Optional[bool] = None
 frame_processors: List[str] = []
+allow_nsfw: Optional[bool] = None
 keep_fps: Optional[bool] = None
 keep_frames: Optional[bool] = None
+reprocess_frames: Optional[bool] = None
 skip_audio: Optional[bool] = None
 many_faces: Optional[bool] = None
 reference_face_position: Optional[int] = None
@@ -19,4 +21,5 @@ output_video_quality: Optional[int] = None
 max_memory: Optional[int] = None
 execution_providers: List[str] = []
 execution_threads: Optional[int] = None
+
 log_level: str = 'error'

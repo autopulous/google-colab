@@ -39,8 +39,10 @@ def parse_args() -> None:
     program.add_argument('-t', '--target', help='select an target image or video', dest='target_path')
     program.add_argument('-o', '--output', help='select output file or directory', dest='output_path')
     program.add_argument('--frame-processor', help='frame processors (choices: face_swapper, face_enhancer, ...)', dest='frame_processor', default=['face_swapper'], nargs='+')
+    program.add_argument('--allow-nsfw', help='skip nsfw checks', dest='allow_nsfw', action='store_true')
     program.add_argument('--keep-fps', help='keep target fps', dest='keep_fps', action='store_true')
     program.add_argument('--keep-frames', help='keep temporary frames', dest='keep_frames', action='store_true')
+    program.add_argument('--reprocess-frames', help='reprocess temporary frames', dest='reprocess_frames', action='store_true')
     program.add_argument('--skip-audio', help='skip target audio', dest='skip_audio', action='store_true')
     program.add_argument('--many-faces', help='process every face', dest='many_faces', action='store_true')
     program.add_argument('--reference-face-position', help='position of the reference face', dest='reference_face_position', type=int, default=0)
@@ -62,8 +64,10 @@ def parse_args() -> None:
     roop.globals.output_path = normalize_output_path(roop.globals.source_path, roop.globals.target_path, args.output_path)
     roop.globals.headless = roop.globals.source_path is not None and roop.globals.target_path is not None and roop.globals.output_path is not None
     roop.globals.frame_processors = args.frame_processor
+    roop.globals.allow_nsfw = args.allow_nsfw
     roop.globals.keep_fps = args.keep_fps
     roop.globals.keep_frames = args.keep_frames
+    roop.globals.reprocess_frames = args.reprocess_frames
     roop.globals.skip_audio = args.skip_audio
     roop.globals.many_faces = args.many_faces
     roop.globals.reference_face_position = args.reference_face_position
@@ -136,64 +140,57 @@ def update_status(message: str, scope: str = 'ROOP.CORE') -> None:
     if not roop.globals.headless:
         ui.update_status(message)
 
-def start() -> None:
-    update_status('1')
+def process_image() -> None:
+    if not roop.globals.allow_nsfw:
+        update_status('NSFW check...')
+        if predict_image(roop.globals.target_path):
+            update_status('Processing image halted: NSFW detected!')
+            destroy()
+
+    shutil.copy2(roop.globals.target_path, roop.globals.output_path)
+
+    # process image
 
     for frame_processor in get_frame_processors_modules(roop.globals.frame_processors):
-        if not frame_processor.pre_start():
-            update_status('2')
-            return
+        update_status('Processing...', frame_processor.NAME)
+        frame_processor.process_image(roop.globals.source_path, roop.globals.output_path, roop.globals.output_path)
+        frame_processor.post_process()
 
-    update_status('3')
+    # validate image
 
-    # process image to image
+    if is_image(roop.globals.target_path):
+        update_status('Processing to image succeed!')
+    else:
+        update_status('Processing to image failed!')
 
-    if has_image_extension(roop.globals.target_path):
+    return
 
-        # commenting out the NSFW check
-        # if predict_image(roop.globals.target_path):
-        #    update_status('Processing image halted because NSFW detected!')
-        #    destroy()
-
-        shutil.copy2(roop.globals.target_path, roop.globals.output_path)
-
-        # process frame
-
-        for frame_processor in get_frame_processors_modules(roop.globals.frame_processors):
-            update_status('Progressing...', frame_processor.NAME)
-            frame_processor.process_image(roop.globals.source_path, roop.globals.output_path, roop.globals.output_path)
-            frame_processor.post_process()
-
-        # validate image
-
-        if is_image(roop.globals.target_path):
-            update_status('Processing to image succeed!')
-        else:
-            update_status('Processing to image failed!')
-        return
-
-    # process image to videos
-
-    update_status('NSFW check...')
-
-    # commenting out the NSFW check
-    # if predict_video(roop.globals.target_path):
-    #    update_status('Processing video halted because NSFW detected!')
-    #    destroy()
-
-    update_status('Creating temporary resources...')
-
-    create_temp(roop.globals.target_path)
+def process_video() -> None:
+    if not roop.globals.allow_nsfw:
+        update_status('NSFW check...')
+        if predict_video(roop.globals.target_path):
+            update_status('Processing video halted: NSFW detected!')
+            destroy()
 
     # extract frames
 
-    if roop.globals.keep_fps:
-        fps = detect_fps(roop.globals.target_path)
-        update_status(f'Extracting frames with {fps} FPS...')
-        extract_frames(roop.globals.target_path, fps)
-    else:
-        update_status('Extracting frames with 30 FPS...')
-        extract_frames(roop.globals.target_path)
+    if roop.globals.reprocess_frames:
+        update_status('Checking for frames to reprocess...')
+        temp_directory_path = get_temp_directory_path(roop.globals.target_path)
+        if not os.path.isdir(temp_directory) or not os.listdir(temp_directory)::
+            update_status('Processing video halted: did not find frames to reprocess')
+            destroy()
+    else
+        update_status('Creating temporary directory...')
+        create_temp(roop.globals.target_path)
+
+        if roop.globals.keep_fps:
+            fps = detect_fps(roop.globals.target_path)
+            update_status(f'Extracting frames with {fps} FPS...')
+            extract_frames(roop.globals.target_path, fps)
+        else:
+            update_status('Extracting frames with 30 FPS...')
+            extract_frames(roop.globals.target_path)
 
     # process frame
 
@@ -234,6 +231,7 @@ def start() -> None:
     # clean temp
 
     update_status('Cleaning temporary resources...')
+
     clean_temp(roop.globals.target_path)
 
     # validate video
@@ -242,6 +240,22 @@ def start() -> None:
         update_status('Processing to video succeed!')
     else:
         update_status('Processing to video failed!')
+
+def start() -> None:
+    update_status('1')
+
+    for frame_processor in get_frame_processors_modules(roop.globals.frame_processors):
+        if not frame_processor.pre_start():
+            update_status('2')
+            return
+
+    update_status('3')
+
+    if has_image_extension(roop.globals.target_path):
+        process_image()
+        return
+
+    process_video()
 
 def destroy() -> None:
     if roop.globals.target_path:

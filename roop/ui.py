@@ -41,7 +41,6 @@ class CTk(ctk.CTk, TkinterDnD.DnDWrapper):
         super().__init__(*args, **kwargs)
         self.TkdndVersion = TkinterDnD._require(self)
 
-
 def init(start: Callable[[], None], destroy: Callable[[], None]) -> ctk.CTk:
     global ROOT, PREVIEW
 
@@ -49,7 +48,6 @@ def init(start: Callable[[], None], destroy: Callable[[], None]) -> ctk.CTk:
     PREVIEW = create_preview(ROOT)
 
     return ROOT
-
 
 def create_root(start: Callable[[], None], destroy: Callable[[], None]) -> ctk.CTk:
     global source_label, target_label, status_label
@@ -68,6 +66,7 @@ def create_root(start: Callable[[], None], destroy: Callable[[], None]) -> ctk.C
     source_label.place(relx=0.1, rely=0.1, relwidth=0.3, relheight=0.25)
     source_label.drop_target_register(DND_ALL)
     source_label.dnd_bind('<<Drop>>', lambda event: select_source_path(event.data))
+
     if roop.globals.source_path:
         select_source_path(roop.globals.source_path)
 
@@ -75,6 +74,7 @@ def create_root(start: Callable[[], None], destroy: Callable[[], None]) -> ctk.C
     target_label.place(relx=0.6, rely=0.1, relwidth=0.3, relheight=0.25)
     target_label.drop_target_register(DND_ALL)
     target_label.dnd_bind('<<Drop>>', lambda event: select_target_path(event.data))
+
     if roop.globals.target_path:
         select_target_path(roop.globals.target_path)
 
@@ -84,6 +84,10 @@ def create_root(start: Callable[[], None], destroy: Callable[[], None]) -> ctk.C
     target_button = ctk.CTkButton(root, text='Select a target', cursor='hand2', command=lambda: select_target_path())
     target_button.place(relx=0.6, rely=0.4, relwidth=0.3, relheight=0.1)
 
+    allow_nsfw_value = ctk.BooleanVar(value=roop.globals.allow_nsfw)
+    allow_nsfw_checkbox = ctk.CTkSwitch(root, text='Allow NSFW content', variable=allow_nsfw_value, cursor='hand2', command=lambda: setattr(roop.globals, 'allow_nsfw', not roop.globals.allow_nsfw))
+    allow_nsfw_checkbox.place(relx=0.1, rely=0.6)
+
     keep_fps_value = ctk.BooleanVar(value=roop.globals.keep_fps)
     keep_fps_checkbox = ctk.CTkSwitch(root, text='Keep target fps', variable=keep_fps_value, cursor='hand2', command=lambda: setattr(roop.globals, 'keep_fps', not roop.globals.keep_fps))
     keep_fps_checkbox.place(relx=0.1, rely=0.6)
@@ -91,6 +95,10 @@ def create_root(start: Callable[[], None], destroy: Callable[[], None]) -> ctk.C
     keep_frames_value = ctk.BooleanVar(value=roop.globals.keep_frames)
     keep_frames_switch = ctk.CTkSwitch(root, text='Keep temporary frames', variable=keep_frames_value, cursor='hand2', command=lambda: setattr(roop.globals, 'keep_frames', keep_frames_value.get()))
     keep_frames_switch.place(relx=0.1, rely=0.65)
+
+    reprocess_frames_value = ctk.BooleanVar(value=roop.globals.reprocess_frames)
+    reprocess_frames_checkbox = ctk.CTkSwitch(root, text='Reprocess kept temporary frames', variable=reprocess_frames_value, cursor='hand2', command=lambda: setattr(roop.globals, 'reprocess_frames', not roop.globals.reprocess_frames))
+    reprocess_frames_checkbox.place(relx=0.1, rely=0.6)
 
     skip_audio_value = ctk.BooleanVar(value=roop.globals.skip_audio)
     skip_audio_switch = ctk.CTkSwitch(root, text='Skip target audio', variable=skip_audio_value, cursor='hand2', command=lambda: setattr(roop.globals, 'skip_audio', skip_audio_value.get()))
@@ -119,7 +127,6 @@ def create_root(start: Callable[[], None], destroy: Callable[[], None]) -> ctk.C
 
     return root
 
-
 def create_preview(parent: ctk.CTkToplevel) -> ctk.CTkToplevel:
     global preview_label, preview_slider
 
@@ -138,19 +145,19 @@ def create_preview(parent: ctk.CTkToplevel) -> ctk.CTkToplevel:
     preview.bind('<Down>', lambda event: update_face_reference(-1))
     return preview
 
-
 def update_status(text: str) -> None:
     status_label.configure(text=text)
     ROOT.update()
-
 
 def select_source_path(source_path: Optional[str] = None) -> None:
     global RECENT_DIRECTORY_SOURCE
 
     if PREVIEW:
         PREVIEW.withdraw()
+
     if source_path is None:
         source_path = ctk.filedialog.askopenfilename(title='select an source image', initialdir=RECENT_DIRECTORY_SOURCE)
+
     if is_image(source_path):
         roop.globals.source_path = source_path
         RECENT_DIRECTORY_SOURCE = os.path.dirname(roop.globals.source_path)
@@ -160,15 +167,17 @@ def select_source_path(source_path: Optional[str] = None) -> None:
         roop.globals.source_path = None
         source_label.configure(image=None)
 
-
 def select_target_path(target_path: Optional[str] = None) -> None:
     global RECENT_DIRECTORY_TARGET
 
     if PREVIEW:
         PREVIEW.withdraw()
+
     clear_face_reference()
+
     if target_path is None:
         target_path = ctk.filedialog.askopenfilename(title='select an target image or video', initialdir=RECENT_DIRECTORY_TARGET)
+
     if is_image(target_path):
         roop.globals.target_path = target_path
         RECENT_DIRECTORY_TARGET = os.path.dirname(roop.globals.target_path)
@@ -183,7 +192,6 @@ def select_target_path(target_path: Optional[str] = None) -> None:
         roop.globals.target_path = None
         target_label.configure(image=None)
 
-
 def select_output_path(start: Callable[[], None]) -> None:
     global RECENT_DIRECTORY_OUTPUT
 
@@ -193,32 +201,38 @@ def select_output_path(start: Callable[[], None]) -> None:
         output_path = ctk.filedialog.asksaveasfilename(title='save video output file', defaultextension='.mp4', initialfile='output.mp4', initialdir=RECENT_DIRECTORY_OUTPUT)
     else:
         output_path = None
+
     if output_path:
         roop.globals.output_path = output_path
         RECENT_DIRECTORY_OUTPUT = os.path.dirname(roop.globals.output_path)
         start()
 
-
 def render_image_preview(image_path: str, size: Tuple[int, int]) -> ctk.CTkImage:
     image = Image.open(image_path)
+
     if size:
         image = ImageOps.fit(image, size, Image.LANCZOS)
-    return ctk.CTkImage(image, size=image.size)
 
+    return ctk.CTkImage(image, size=image.size)
 
 def render_video_preview(video_path: str, size: Tuple[int, int], frame_number: int = 0) -> ctk.CTkImage:
     capture = cv2.VideoCapture(video_path)
+
     if frame_number:
         capture.set(cv2.CAP_PROP_POS_FRAMES, frame_number)
+
     has_frame, frame = capture.read()
+
     if has_frame:
         image = Image.fromarray(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
+
         if size:
             image = ImageOps.fit(image, size, Image.LANCZOS)
+
         return ctk.CTkImage(image, size=image.size)
+
     capture.release()
     cv2.destroyAllWindows()
-
 
 def toggle_preview() -> None:
     if PREVIEW.state() == 'normal':
@@ -231,17 +245,20 @@ def toggle_preview() -> None:
         update_preview(roop.globals.reference_frame_number)
         PREVIEW.deiconify()
 
-
 def init_preview() -> None:
     PREVIEW.title('Preview [ ↕ Reference face ]')
+
     if is_image(roop.globals.target_path):
         preview_slider.pack_forget()
+
     if is_video(roop.globals.target_path):
         video_frame_total = get_video_frame_total(roop.globals.target_path)
+
         if video_frame_total > 0:
             PREVIEW.title('Preview [ ↕ Reference face ] [ ↔ Frame number ]')
             PREVIEW.bind('<Right>', lambda event: update_frame(int(video_frame_total / 20)))
             PREVIEW.bind('<Left>', lambda event: update_frame(int(video_frame_total / -20)))
+
         preview_slider.configure(to=video_frame_total)
         preview_slider.pack(fill='x')
         preview_slider.set(roop.globals.reference_frame_number)
@@ -250,26 +267,30 @@ def init_preview() -> None:
 def update_preview(frame_number: int = 0) -> None:
     if roop.globals.source_path and roop.globals.target_path:
         temp_frame = get_video_frame(roop.globals.target_path, frame_number)
+
         if predict_frame(temp_frame):
             sys.exit()
+
         source_face = get_one_face(cv2.imread(roop.globals.source_path))
+
         if not get_face_reference():
             reference_frame = get_video_frame(roop.globals.target_path, roop.globals.reference_frame_number)
             reference_face = get_one_face(reference_frame, roop.globals.reference_face_position)
             set_face_reference(reference_face)
         else:
             reference_face = get_face_reference()
+
         for frame_processor in get_frame_processors_modules(roop.globals.frame_processors):
             temp_frame = frame_processor.process_frame(
                 source_face,
                 reference_face,
                 temp_frame
             )
+
         image = Image.fromarray(cv2.cvtColor(temp_frame, cv2.COLOR_BGR2RGB))
         image = ImageOps.contain(image, (PREVIEW_MAX_WIDTH, PREVIEW_MAX_HEIGHT), Image.LANCZOS)
         image = ctk.CTkImage(image, size=image.size)
         preview_label.configure(image=image)
-
 
 def update_face_reference(steps: int) -> None:
     clear_face_reference()

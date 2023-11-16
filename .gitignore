@@ -2,3 +2,5 @@
 models
 temp
 __pycache__
+/.vs/ProjectSettings.json
+/.vs/slnx.sqlite
