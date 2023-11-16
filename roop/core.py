@@ -129,7 +129,7 @@ def pre_check() -> bool:
         return False
 
     if not shutil.which('ffmpeg'):
-        update_status('ffmpeg is not installed.')
+        update_status('ffmpeg is not installed')
         return False
 
     return True
