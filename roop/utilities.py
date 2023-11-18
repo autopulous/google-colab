@@ -53,14 +53,14 @@ def extract_frames(target_path: str, fps: float = 30) -> bool:
 def create_video(target_path: str, fps: float = 30) -> bool:
     temp_output_path = get_temp_output_path(target_path)
     temp_directory_path = get_temp_directory_path(target_path)
-    output_video_quality = (roop.globals.output_video_quality + 1) * 51 // 100
+    output_video_lossiness = (roop.globals.output_video_lossiness + 1) * 51 // 100
     commands = ['-hwaccel', 'auto', '-r', str(fps), '-i', os.path.join(temp_directory_path, '%04d.' + roop.globals.temp_frame_format), '-c:v', roop.globals.output_video_encoder]
 
     if roop.globals.output_video_encoder in ['libx264', 'libx265', 'libvpx']:
-        commands.extend(['-crf', str(output_video_quality)])
+        commands.extend(['-crf', str(output_video_lossiness)])
 
     if roop.globals.output_video_encoder in ['h264_nvenc', 'hevc_nvenc']:
-        commands.extend(['-cq', str(output_video_quality)])
+        commands.extend(['-cq', str(output_video_lossiness)])
 
     commands.extend(['-pix_fmt', 'yuv420p', '-vf', 'colorspace=bt709:iall=bt601-6-625:fast=1', '-y', temp_output_path])
 
