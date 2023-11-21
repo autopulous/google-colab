@@ -85,9 +85,9 @@ def get_temp_frame_paths(input_path: str) -> List[str]:
 
 
 def get_temp_directory_path(input_path: str) -> str:
-    target_name, _ = os.path.splitext(os.path.basename(input_path))
-    target_directory_path = os.path.dirname(input_path)
-    return os.path.join(target_directory_path, TEMP_DIRECTORY, target_name)
+    input_name, _ = os.path.splitext(os.path.basename(input_path))
+    input_directory_path = os.path.dirname(input_path)
+    return os.path.join(input_directory_path, TEMP_DIRECTORY, input_name)
 
 
 def get_temp_output_path(input_path: str) -> str:
