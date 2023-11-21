@@ -43,6 +43,7 @@ def parse_args() -> None:
     program.add_argument('--keep-fps', help='keep target fps', dest='keep_fps', action='store_true')
     program.add_argument('--keep-frames', help='keep temporary frames', dest='keep_frames', action='store_true')
     program.add_argument('--reprocess-frames', help='reprocess temporary frames', dest='reprocess_frames', action='store_true')
+    program.add_argument('--render-only', help='only generate a video from the temporary frames', dest='render_only', action='store_false')
     program.add_argument('--skip-audio', help='skip target audio', dest='skip_audio', action='store_true')
     program.add_argument('--many-faces', help='process every face', dest='many_faces', action='store_true')
     program.add_argument('--reference-face-position', help='position of the reference face', dest='reference_face_position', type=int, default=0)
@@ -68,6 +69,7 @@ def parse_args() -> None:
     roop.globals.keep_fps = args.keep_fps
     roop.globals.keep_frames = args.keep_frames
     roop.globals.reprocess_frames = args.reprocess_frames
+    roop.globals.render_only = args.render_only
     roop.globals.skip_audio = args.skip_audio
     roop.globals.many_faces = args.many_faces
     roop.globals.reference_face_position = args.reference_face_position
@@ -166,23 +168,19 @@ def process_image() -> None:
     return
 
 def process_video() -> None:
+    # not safe for work check
+
     if not roop.globals.allow_nsfw:
         update_status('NSFW check...')
         if predict_video(roop.globals.input_path):
             update_status('Processing video halted: NSFW detected!')
             destroy()
 
-    # extract frames
-
-    if roop.globals.reprocess_frames:
-        update_status('Checking for frames to reprocess...')
-        temp_directory_path = get_temp_directory_path(roop.globals.input_path)
-        if not os.path.isdir(temp_directory_path) or not os.listdir(temp_directory_path):
-            update_status('Processing video halted: did not find frames to reprocess')
-            destroy()
-    else:
+    if not roop.globals.reprocess_frames and not roop.globals.render_only:
         update_status('Creating temporary directory...')
         create_temp(roop.globals.input_path)
+
+        # extract frames
 
         if roop.globals.keep_fps:
             fps = detect_fps(roop.globals.input_path)
@@ -191,19 +189,29 @@ def process_video() -> None:
         else:
             update_status('Extracting frames with 30 FPS...')
             extract_frames(roop.globals.input_path)
+    else:
+        update_status('Checking for frames to reprocess and/or render...')
+        temp_directory_path = get_temp_directory_path(roop.globals.input_path)
+
+        # frames are expected to exist
+
+        if not os.path.isdir(temp_directory_path) or not os.listdir(temp_directory_path):
+            update_status('Processing video halted: did not find frames to reprocess and/or render')
+            destroy()
 
     # process frame
 
     temp_frame_paths = get_temp_frame_paths(roop.globals.input_path)
 
-    if temp_frame_paths:
+    if not temp_frame_paths:
+        update_status('Frames not found...')
+        return
+
+    if not roop.globals.render_only:
         for frame_processor in get_frame_processors_modules(roop.globals.frame_processors):
             update_status('Progressing...', frame_processor.NAME)
             frame_processor.process_video(roop.globals.replacement_path, temp_frame_paths)
             frame_processor.post_process()
-    else:
-        update_status('Frames not found...')
-        return
 
     # create video
 

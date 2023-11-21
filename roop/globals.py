@@ -1,7 +1,7 @@
 from typing import List, Optional
 
-source_path: Optional[str] = None
-target_path: Optional[str] = None
+input_path: Optional[str] = None
+replacement_path: Optional[str] = None
 output_path: Optional[str] = None
 headless: Optional[bool] = None
 frame_processors: List[str] = []
@@ -9,6 +9,7 @@ allow_nsfw: Optional[bool] = None
 keep_fps: Optional[bool] = None
 keep_frames: Optional[bool] = None
 reprocess_frames: Optional[bool] = None
+render_only: Optional[bool] = None
 skip_audio: Optional[bool] = None
 many_faces: Optional[bool] = None
 reference_face_position: Optional[int] = None
