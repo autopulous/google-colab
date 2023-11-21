@@ -32,6 +32,7 @@ from roop.utilities import get_temp_directory_path, has_image_extension, is_imag
 warnings.filterwarnings('ignore', category=FutureWarning, module='insightface')
 warnings.filterwarnings('ignore', category=UserWarning, module='torchvision')
 
+
 def parse_args() -> None:
     signal.signal(signal.SIGINT, lambda signal_number, frame: destroy())
     program = argparse.ArgumentParser(formatter_class=lambda prog: argparse.HelpFormatter(prog, max_help_position=100))
@@ -83,21 +84,26 @@ def parse_args() -> None:
     roop.globals.execution_providers = decode_execution_providers(args.execution_provider)
     roop.globals.execution_threads = args.execution_threads
 
+
 def encode_execution_providers(execution_providers: List[str]) -> List[str]:
     return [execution_provider.replace('ExecutionProvider', '').lower() for execution_provider in execution_providers]
+
 
 def decode_execution_providers(execution_providers: List[str]) -> List[str]:
     return [provider for provider, encoded_execution_provider in zip(onnxruntime.get_available_providers(), encode_execution_providers(onnxruntime.get_available_providers()))
             if any(execution_provider in encoded_execution_provider for execution_provider in execution_providers)]
 
+
 def suggest_execution_providers() -> List[str]:
     return encode_execution_providers(onnxruntime.get_available_providers())
+
 
 def suggest_execution_threads() -> int:
     if 'CUDAExecutionProvider' in onnxruntime.get_available_providers():
         return 8
 
     return 1
+
 
 def limit_resources() -> None:
     # prevent tensorflow memory leak
@@ -125,6 +131,7 @@ def limit_resources() -> None:
             import resource
             resource.setrlimit(resource.RLIMIT_DATA, (memory, memory))
 
+
 def pre_check() -> bool:
     if sys.version_info < (3, 9):
         update_status('Python version is not supported - please upgrade to 3.9 or higher.')
@@ -136,11 +143,13 @@ def pre_check() -> bool:
 
     return True
 
+
 def update_status(message: str, scope: str = 'ROOP.CORE') -> None:
     print(f'[{scope}] {message}')
 
     if not roop.globals.headless:
         ui.update_status(message)
+
 
 def process_image() -> None:
     if not roop.globals.allow_nsfw:
@@ -166,6 +175,7 @@ def process_image() -> None:
         update_status('Processing to image failed!')
 
     return
+
 
 def process_video() -> None:
     # not safe for work check
@@ -249,6 +259,7 @@ def process_video() -> None:
     else:
         update_status('Processing to video failed!')
 
+
 def start() -> None:
     update_status('1')
 
@@ -265,11 +276,13 @@ def start() -> None:
 
     process_video()
 
+
 def destroy() -> None:
     if roop.globals.input_path:
         clean_temp(roop.globals.input_path)
 
     sys.exit()
+
 
 def run() -> None:
     parse_args()

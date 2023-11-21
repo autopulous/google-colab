@@ -15,6 +15,7 @@ THREAD_SEMAPHORE = threading.Semaphore()
 THREAD_LOCK = threading.Lock()
 NAME = 'ROOP.FACE-ENHANCER'
 
+
 def get_face_enhancer() -> Any:
     global FACE_ENHANCER
 
@@ -26,6 +27,7 @@ def get_face_enhancer() -> Any:
 
     return FACE_ENHANCER
 
+
 def get_device() -> str:
     if 'CUDAExecutionProvider' in roop.globals.execution_providers:
         return 'cuda'
@@ -35,10 +37,12 @@ def get_device() -> str:
 
     return 'cpu'
 
+
 def clear_face_enhancer() -> None:
     global FACE_ENHANCER
 
     FACE_ENHANCER = None
+
 
 def pre_check() -> bool:
     download_directory_path = resolve_relative_path('../models')
@@ -46,15 +50,18 @@ def pre_check() -> bool:
 
     return True
 
+
 def pre_start() -> bool:
-    if not is_image(roop.globals.target_path) and not is_video(roop.globals.target_path):
+    if not is_image(roop.globals.input_path) and not is_video(roop.globals.input_path):
         update_status('Select an image or video for target path.', NAME)
         return False
 
     return True
 
+
 def post_process() -> None:
     clear_face_enhancer()
+
 
 def enhance_face(target_face: Face, temp_frame: Frame) -> Frame:
     start_x, start_y, end_x, end_y = map(int, target_face['bbox'])
@@ -76,6 +83,7 @@ def enhance_face(target_face: Face, temp_frame: Frame) -> Frame:
 
     return temp_frame
 
+
 def process_frame(source_face: Face, reference_face: Face, temp_frame: Frame) -> Frame:
     many_faces = get_many_faces(temp_frame)
 
@@ -85,7 +93,8 @@ def process_frame(source_face: Face, reference_face: Face, temp_frame: Frame) ->
 
     return temp_frame
 
-def process_frames(source_path: str, temp_frame_paths: List[str], update: Callable[[], None]) -> None:
+
+def process_frames(replacement_path: str, temp_frame_paths: List[str], update: Callable[[], None]) -> None:
     for temp_frame_path in temp_frame_paths:
         temp_frame = cv2.imread(temp_frame_path)
         result = process_frame(None, None, temp_frame)
@@ -94,10 +103,12 @@ def process_frames(source_path: str, temp_frame_paths: List[str], update: Callab
         if update:
             update()
 
-def process_image(source_path: str, target_path: str, output_path: str) -> None:
-    target_frame = cv2.imread(target_path)
+
+def process_image(replacement_path: str, input_path: str, output_path: str) -> None:
+    target_frame = cv2.imread(input_path)
     result = process_frame(None, None, target_frame)
     cv2.imwrite(output_path, result)
 
-def process_video(source_path: str, temp_frame_paths: List[str]) -> None:
+
+def process_video(replacement_path: str, temp_frame_paths: List[str]) -> None:
     roop.processors.frame.core.process_video(None, temp_frame_paths, process_frames)

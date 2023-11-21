@@ -10,6 +10,7 @@ PREDICTOR = None
 THREAD_LOCK = threading.Lock()
 MAX_PROBABILITY = 0.85
 
+
 def get_predictor() -> Model:
     global PREDICTOR
 
@@ -19,9 +20,11 @@ def get_predictor() -> Model:
 
     return PREDICTOR
 
+
 def clear_predictor() -> None:
     global PREDICTOR
     PREDICTOR = None
+
 
 def predict_frame(target_frame: Frame) -> bool:
     image = Image.fromarray(target_frame)
@@ -31,10 +34,12 @@ def predict_frame(target_frame: Frame) -> bool:
 
     return probability > MAX_PROBABILITY
 
-def predict_image(target_path: str) -> bool:
-    return opennsfw2.predict_image(target_path) > MAX_PROBABILITY
 
-def predict_video(target_path: str) -> bool:
-    _, probabilities = opennsfw2.predict_video_frames(video_path=target_path, frame_interval=100)
+def predict_image(input_path: str) -> bool:
+    return opennsfw2.predict_image(input_path) > MAX_PROBABILITY
+
+
+def predict_video(input_path: str) -> bool:
+    _, probabilities = opennsfw2.predict_video_frames(video_path=input_path, frame_interval=100)
 
     return any(probability > MAX_PROBABILITY for probability in probabilities)

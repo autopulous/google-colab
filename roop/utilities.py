@@ -20,6 +20,7 @@ TEMP_VIDEO_FILE = 'temp.mp4'
 if platform.system().lower() == 'darwin':
     ssl._create_default_https_context = ssl._create_unverified_context
 
+
 def run_ffmpeg(args: List[str]) -> bool:
     commands = ['ffmpeg', '-hide_banner', '-loglevel', roop.globals.log_level]
     commands.extend(args)
@@ -32,8 +33,9 @@ def run_ffmpeg(args: List[str]) -> bool:
 
     return False
 
-def detect_fps(target_path: str) -> float:
-    command = ['ffprobe', '-v', 'error', '-select_streams', 'v:0', '-show_entries', 'stream=r_frame_rate', '-of', 'default=noprint_wrappers=1:nokey=1', target_path]
+
+def detect_fps(input_path: str) -> float:
+    command = ['ffprobe', '-v', 'error', '-select_streams', 'v:0', '-show_entries', 'stream=r_frame_rate', '-of', 'default=noprint_wrappers=1:nokey=1', input_path]
     output = subprocess.check_output(command).decode().strip().split('/')
 
     try:
@@ -44,15 +46,17 @@ def detect_fps(target_path: str) -> float:
 
     return 30
 
-def extract_frames(target_path: str, fps: float = 30) -> bool:
-    temp_directory_path = get_temp_directory_path(target_path)
+
+def extract_frames(input_path: str, fps: float = 30) -> bool:
+    temp_directory_path = get_temp_directory_path(input_path)
     temp_frame_quality = roop.globals.temp_frame_quality * 31 // 100
 
-    return run_ffmpeg(['-hwaccel', 'auto', '-i', target_path, '-q:v', str(temp_frame_quality), '-pix_fmt', 'rgb24', '-vf', 'fps=' + str(fps), os.path.join(temp_directory_path, '%04d.' + roop.globals.temp_frame_format)])
+    return run_ffmpeg(['-hwaccel', 'auto', '-i', input_path, '-q:v', str(temp_frame_quality), '-pix_fmt', 'rgb24', '-vf', 'fps=' + str(fps), os.path.join(temp_directory_path, '%04d.' + roop.globals.temp_frame_format)])
 
-def create_video(target_path: str, fps: float = 30) -> bool:
-    temp_output_path = get_temp_output_path(target_path)
-    temp_directory_path = get_temp_directory_path(target_path)
+
+def create_video(input_path: str, fps: float = 30) -> bool:
+    temp_output_path = get_temp_output_path(input_path)
+    temp_directory_path = get_temp_directory_path(input_path)
     output_video_lossiness = (roop.globals.output_video_lossiness + 1) * 51 // 100
     commands = ['-hwaccel', 'auto', '-r', str(fps), '-i', os.path.join(temp_directory_path, '%04d.' + roop.globals.temp_frame_format), '-c:v', roop.globals.output_video_encoder]
 
@@ -66,42 +70,49 @@ def create_video(target_path: str, fps: float = 30) -> bool:
 
     return run_ffmpeg(commands)
 
-def restore_audio(target_path: str, output_path: str) -> None:
-    temp_output_path = get_temp_output_path(target_path)
-    done = run_ffmpeg(['-i', temp_output_path, '-i', target_path, '-c:v', 'copy', '-map', '0:v:0', '-map', '1:a:0', '-y', output_path])
+
+def restore_audio(input_path: str, output_path: str) -> None:
+    temp_output_path = get_temp_output_path(input_path)
+    done = run_ffmpeg(['-i', temp_output_path, '-i', input_path, '-c:v', 'copy', '-map', '0:v:0', '-map', '1:a:0', '-y', output_path])
 
     if not done:
-        move_temp(target_path, output_path)
+        move_temp(input_path, output_path)
 
-def get_temp_frame_paths(target_path: str) -> List[str]:
-    temp_directory_path = get_temp_directory_path(target_path)
+
+def get_temp_frame_paths(input_path: str) -> List[str]:
+    temp_directory_path = get_temp_directory_path(input_path)
     return glob.glob((os.path.join(glob.escape(temp_directory_path), '*.' + roop.globals.temp_frame_format)))
 
-def get_temp_directory_path(target_path: str) -> str:
-    target_name, _ = os.path.splitext(os.path.basename(target_path))
-    target_directory_path = os.path.dirname(target_path)
+
+def get_temp_directory_path(input_path: str) -> str:
+    target_name, _ = os.path.splitext(os.path.basename(input_path))
+    target_directory_path = os.path.dirname(input_path)
     return os.path.join(target_directory_path, TEMP_DIRECTORY, target_name)
 
-def get_temp_output_path(target_path: str) -> str:
-    temp_directory_path = get_temp_directory_path(target_path)
+
+def get_temp_output_path(input_path: str) -> str:
+    temp_directory_path = get_temp_directory_path(input_path)
     return os.path.join(temp_directory_path, TEMP_VIDEO_FILE)
 
-def normalize_output_path(source_path: str, target_path: str, output_path: str) -> Optional[str]:
-    if source_path and target_path and output_path:
-        source_name, _ = os.path.splitext(os.path.basename(source_path))
-        target_name, target_extension = os.path.splitext(os.path.basename(target_path))
+
+def normalize_output_path(replacement_path: str, input_path: str, output_path: str) -> Optional[str]:
+    if replacement_path and input_path and output_path:
+        source_name, _ = os.path.splitext(os.path.basename(replacement_path))
+        target_name, target_extension = os.path.splitext(os.path.basename(input_path))
 
         if os.path.isdir(output_path):
             return os.path.join(output_path, source_name + '-' + target_name + target_extension)
 
     return output_path
 
-def create_temp(target_path: str) -> None:
-    temp_directory_path = get_temp_directory_path(target_path)
+
+def create_temp(input_path: str) -> None:
+    temp_directory_path = get_temp_directory_path(input_path)
     Path(temp_directory_path).mkdir(parents=True, exist_ok=True)
 
-def move_temp(target_path: str, output_path: str) -> None:
-    temp_output_path = get_temp_output_path(target_path)
+
+def move_temp(input_path: str, output_path: str) -> None:
+    temp_output_path = get_temp_output_path(input_path)
 
     if os.path.isfile(temp_output_path):
         if os.path.isfile(output_path):
@@ -109,11 +120,12 @@ def move_temp(target_path: str, output_path: str) -> None:
 
         shutil.move(temp_output_path, output_path)
 
-def clean_temp(target_path: str) -> None:
+
+def clean_temp(input_path: str) -> None:
     if roop.globals.keep_frames:
         return
 
-    temp_directory = get_temp_directory_path(target_path)
+    temp_directory = get_temp_directory_path(input_path)
     
     if os.path.isdir(temp_directory):
         shutil.rmtree(temp_directory)
@@ -123,8 +135,10 @@ def clean_temp(target_path: str) -> None:
     if os.path.isdir(temp_parent_directory) and not os.listdir(temp_parent_directory):
         os.rmdir(temp_parent_directory)
 
+
 def has_image_extension(image_path: str) -> bool:
     return image_path.lower().endswith(('png', 'jpg', 'jpeg', 'webp'))
+
 
 def is_image(image_path: str) -> bool:
     if image_path and os.path.isfile(image_path):
@@ -133,12 +147,14 @@ def is_image(image_path: str) -> bool:
 
     return False
 
+
 def is_video(video_path: str) -> bool:
     if video_path and os.path.isfile(video_path):
         mimetype, _ = mimetypes.guess_type(video_path)
         return bool(mimetype and mimetype.startswith('video/'))
 
     return False
+
 
 def conditional_download(download_directory_path: str, urls: List[str]) -> None:
     if not os.path.exists(download_directory_path):
@@ -153,6 +169,7 @@ def conditional_download(download_directory_path: str, urls: List[str]) -> None:
 
             with tqdm(total=total, desc='Downloading', unit='B', unit_scale=True, unit_divisor=1024) as progress:
                 urllib.request.urlretrieve(url, download_file_path, reporthook=lambda count, block_size, total_size: progress.update(block_size))  # type: ignore[attr-defined]
+
 
 def resolve_relative_path(path: str) -> str:
     return os.path.abspath(os.path.join(os.path.dirname(__file__), path))

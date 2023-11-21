@@ -41,6 +41,7 @@ class CTk(ctk.CTk, TkinterDnD.DnDWrapper):
         super().__init__(*args, **kwargs)
         self.TkdndVersion = TkinterDnD._require(self)
 
+
 def init(start: Callable[[], None], destroy: Callable[[], None]) -> ctk.CTk:
     global ROOT, PREVIEW
 
@@ -48,6 +49,7 @@ def init(start: Callable[[], None], destroy: Callable[[], None]) -> ctk.CTk:
     PREVIEW = create_preview(ROOT)
 
     return ROOT
+
 
 def create_root(start: Callable[[], None], destroy: Callable[[], None]) -> ctk.CTk:
     global source_label, target_label, status_label
@@ -65,23 +67,23 @@ def create_root(start: Callable[[], None], destroy: Callable[[], None]) -> ctk.C
     source_label = ctk.CTkLabel(root, text=None, fg_color=ctk.ThemeManager.theme.get('RoopDropArea').get('fg_color'))
     source_label.place(relx=0.1, rely=0.1, relwidth=0.3, relheight=0.25)
     source_label.drop_target_register(DND_ALL)
-    source_label.dnd_bind('<<Drop>>', lambda event: select_source_path(event.data))
+    source_label.dnd_bind('<<Drop>>', lambda event: select_replacement_path(event.data))
 
-    if roop.globals.source_path:
-        select_source_path(roop.globals.source_path)
+    if roop.globals.replacement_path:
+        select_replacement_path(roop.globals.replacement_path)
 
     target_label = ctk.CTkLabel(root, text=None, fg_color=ctk.ThemeManager.theme.get('RoopDropArea').get('fg_color'))
     target_label.place(relx=0.6, rely=0.1, relwidth=0.3, relheight=0.25)
     target_label.drop_target_register(DND_ALL)
-    target_label.dnd_bind('<<Drop>>', lambda event: select_target_path(event.data))
+    target_label.dnd_bind('<<Drop>>', lambda event: select_input_path(event.data))
 
-    if roop.globals.target_path:
-        select_target_path(roop.globals.target_path)
+    if roop.globals.input_path:
+        select_input_path(roop.globals.input_path)
 
-    source_button = ctk.CTkButton(root, text='Select a face', cursor='hand2', command=lambda: select_source_path())
+    source_button = ctk.CTkButton(root, text='Select a face', cursor='hand2', command=lambda: select_replacement_path())
     source_button.place(relx=0.1, rely=0.4, relwidth=0.3, relheight=0.1)
 
-    target_button = ctk.CTkButton(root, text='Select a target', cursor='hand2', command=lambda: select_target_path())
+    target_button = ctk.CTkButton(root, text='Select a target', cursor='hand2', command=lambda: select_input_path())
     target_button.place(relx=0.6, rely=0.4, relwidth=0.3, relheight=0.1)
 
     allow_nsfw_value = ctk.BooleanVar(value=roop.globals.allow_nsfw)
@@ -127,6 +129,7 @@ def create_root(start: Callable[[], None], destroy: Callable[[], None]) -> ctk.C
 
     return root
 
+
 def create_preview(parent: ctk.CTkToplevel) -> ctk.CTkToplevel:
     global preview_label, preview_slider
 
@@ -145,29 +148,32 @@ def create_preview(parent: ctk.CTkToplevel) -> ctk.CTkToplevel:
     preview.bind('<Down>', lambda event: update_face_reference(-1))
     return preview
 
+
 def update_status(text: str) -> None:
     status_label.configure(text=text)
     ROOT.update()
 
-def select_source_path(source_path: Optional[str] = None) -> None:
+
+def select_replacement_path(replacement_path: Optional[str] = None) -> None:
     global RECENT_DIRECTORY_SOURCE
 
     if PREVIEW:
         PREVIEW.withdraw()
 
-    if source_path is None:
-        source_path = ctk.filedialog.askopenfilename(title='select an source image', initialdir=RECENT_DIRECTORY_SOURCE)
+    if replacement_path is None:
+        replacement_path = ctk.filedialog.askopenfilename(title='select an source image', initialdir=RECENT_DIRECTORY_SOURCE)
 
-    if is_image(source_path):
-        roop.globals.source_path = source_path
-        RECENT_DIRECTORY_SOURCE = os.path.dirname(roop.globals.source_path)
-        image = render_image_preview(roop.globals.source_path, (200, 200))
+    if is_image(replacement_path):
+        roop.globals.replacement_path = replacement_path
+        RECENT_DIRECTORY_SOURCE = os.path.dirname(roop.globals.replacement_path)
+        image = render_image_preview(roop.globals.replacement_path, (200, 200))
         source_label.configure(image=image)
     else:
-        roop.globals.source_path = None
+        roop.globals.replacement_path = None
         source_label.configure(image=None)
 
-def select_target_path(target_path: Optional[str] = None) -> None:
+
+def select_input_path(input_path: Optional[str] = None) -> None:
     global RECENT_DIRECTORY_TARGET
 
     if PREVIEW:
@@ -175,29 +181,30 @@ def select_target_path(target_path: Optional[str] = None) -> None:
 
     clear_face_reference()
 
-    if target_path is None:
-        target_path = ctk.filedialog.askopenfilename(title='select an target image or video', initialdir=RECENT_DIRECTORY_TARGET)
+    if input_path is None:
+        input_path = ctk.filedialog.askopenfilename(title='select an target image or video', initialdir=RECENT_DIRECTORY_TARGET)
 
-    if is_image(target_path):
-        roop.globals.target_path = target_path
-        RECENT_DIRECTORY_TARGET = os.path.dirname(roop.globals.target_path)
-        image = render_image_preview(roop.globals.target_path, (200, 200))
-        target_label.configure(image=image)
-    elif is_video(target_path):
-        roop.globals.target_path = target_path
-        RECENT_DIRECTORY_TARGET = os.path.dirname(roop.globals.target_path)
-        video_frame = render_video_preview(target_path, (200, 200))
+    if is_image(input_path):
+        roop.globals.input_path = input_path
+        RECENT_DIRECTORY_TARGET = os.path.dirname(roop.globals.input_path)
+        image = render_image_preview(roop.globals.input_path, (200, 200))
+        target_label.input_path(image=image)
+    elif is_video(input_path):
+        roop.globals.input_path = input_path
+        RECENT_DIRECTORY_TARGET = os.path.dirname(roop.globals.input_path)
+        video_frame = render_video_preview(input_path, (200, 200))
         target_label.configure(image=video_frame)
     else:
-        roop.globals.target_path = None
+        roop.globals.input_path = None
         target_label.configure(image=None)
+
 
 def select_output_path(start: Callable[[], None]) -> None:
     global RECENT_DIRECTORY_OUTPUT
 
-    if is_image(roop.globals.target_path):
+    if is_image(roop.globals.input_path):
         output_path = ctk.filedialog.asksaveasfilename(title='save image output file', defaultextension='.png', initialfile='output.png', initialdir=RECENT_DIRECTORY_OUTPUT)
-    elif is_video(roop.globals.target_path):
+    elif is_video(roop.globals.input_path):
         output_path = ctk.filedialog.asksaveasfilename(title='save video output file', defaultextension='.mp4', initialfile='output.mp4', initialdir=RECENT_DIRECTORY_OUTPUT)
     else:
         output_path = None
@@ -207,6 +214,7 @@ def select_output_path(start: Callable[[], None]) -> None:
         RECENT_DIRECTORY_OUTPUT = os.path.dirname(roop.globals.output_path)
         start()
 
+
 def render_image_preview(image_path: str, size: Tuple[int, int]) -> ctk.CTkImage:
     image = Image.open(image_path)
 
@@ -214,6 +222,7 @@ def render_image_preview(image_path: str, size: Tuple[int, int]) -> ctk.CTkImage
         image = ImageOps.fit(image, size, Image.LANCZOS)
 
     return ctk.CTkImage(image, size=image.size)
+
 
 def render_video_preview(video_path: str, size: Tuple[int, int], frame_number: int = 0) -> ctk.CTkImage:
     capture = cv2.VideoCapture(video_path)
@@ -234,25 +243,27 @@ def render_video_preview(video_path: str, size: Tuple[int, int], frame_number: i
     capture.release()
     cv2.destroyAllWindows()
 
+
 def toggle_preview() -> None:
     if PREVIEW.state() == 'normal':
         PREVIEW.unbind('<Right>')
         PREVIEW.unbind('<Left>')
         PREVIEW.withdraw()
         clear_predictor()
-    elif roop.globals.source_path and roop.globals.target_path:
+    elif roop.globals.replacement_path and roop.globals.input_path:
         init_preview()
         update_preview(roop.globals.reference_frame_number)
         PREVIEW.deiconify()
 
+
 def init_preview() -> None:
     PREVIEW.title('Preview [ ↕ Reference face ]')
 
-    if is_image(roop.globals.target_path):
+    if is_image(roop.globals.input_path):
         preview_slider.pack_forget()
 
-    if is_video(roop.globals.target_path):
-        video_frame_total = get_video_frame_total(roop.globals.target_path)
+    if is_video(roop.globals.input_path):
+        video_frame_total = get_video_frame_total(roop.globals.input_path)
 
         if video_frame_total > 0:
             PREVIEW.title('Preview [ ↕ Reference face ] [ ↔ Frame number ]')
@@ -265,16 +276,16 @@ def init_preview() -> None:
 
 
 def update_preview(frame_number: int = 0) -> None:
-    if roop.globals.source_path and roop.globals.target_path:
-        temp_frame = get_video_frame(roop.globals.target_path, frame_number)
+    if roop.globals.replacement_path and roop.globals.input_path:
+        temp_frame = get_video_frame(roop.globals.input_path, frame_number)
 
         if predict_frame(temp_frame):
             sys.exit()
 
-        source_face = get_one_face(cv2.imread(roop.globals.source_path))
+        source_face = get_one_face(cv2.imread(roop.globals.replacement_path))
 
         if not get_face_reference():
-            reference_frame = get_video_frame(roop.globals.target_path, roop.globals.reference_frame_number)
+            reference_frame = get_video_frame(roop.globals.input_path, roop.globals.reference_frame_number)
             reference_face = get_one_face(reference_frame, roop.globals.reference_face_position)
             set_face_reference(reference_face)
         else:
@@ -291,6 +302,7 @@ def update_preview(frame_number: int = 0) -> None:
         image = ImageOps.contain(image, (PREVIEW_MAX_WIDTH, PREVIEW_MAX_HEIGHT), Image.LANCZOS)
         image = ctk.CTkImage(image, size=image.size)
         preview_label.configure(image=image)
+
 
 def update_face_reference(steps: int) -> None:
     clear_face_reference()
