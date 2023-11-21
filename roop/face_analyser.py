@@ -9,6 +9,7 @@ from roop.typing import Frame, Face
 FACE_ANALYSER = None
 THREAD_LOCK = threading.Lock()
 
+
 def get_face_analyser() -> Any:
     global FACE_ANALYSER
 
@@ -19,9 +20,11 @@ def get_face_analyser() -> Any:
 
     return FACE_ANALYSER
 
+
 def clear_face_analyser() -> Any:
     global FACE_ANALYSER
     FACE_ANALYSER = None
+
 
 def get_one_face(frame: Frame, position: int = 0) -> Optional[Face]:
     many_faces = get_many_faces(frame)
@@ -34,11 +37,13 @@ def get_one_face(frame: Frame, position: int = 0) -> Optional[Face]:
 
     return None
 
+
 def get_many_faces(frame: Frame) -> Optional[List[Face]]:
     try:
         return get_face_analyser().get(frame)
     except ValueError:
         return None
+
 
 def find_similar_face(frame: Frame, reference_face: Face) -> Optional[Face]:
     many_faces = get_many_faces(frame)
