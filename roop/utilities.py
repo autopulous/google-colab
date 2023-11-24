@@ -82,7 +82,7 @@ def restore_audio(input_path: str, output_path: str) -> None:
     done = run_ffmpeg(['-i', temp_output_path, '-i', input_path, '-c:v', 'copy', '-map', '0:v:0', '-map', '1:a:0', '-y', output_path])
 
     # Example restore command line command
-    # ffmpeg -hide_banner -hwaccel auto -i x.mp4 -i ..\?.mp4 -c:v copy -map 0:v:0 -map 1:a:0 -y y.mp4
+    # ffmpeg -hide_banner -hwaccel auto -i x.mp4 -i ..\net-clean.mp4 -c:v copy -map 0:v:0 -map 1:a:0 -y y.mp4
 
     if not done:
         move_temp(input_path, output_path)
@@ -106,11 +106,11 @@ def get_temp_output_path(input_path: str) -> str:
 
 def normalize_output_path(replacement_path: str, input_path: str, output_path: str) -> Optional[str]:
     if replacement_path and input_path and output_path:
-        source_name, _ = os.path.splitext(os.path.basename(replacement_path))
-        target_name, target_extension = os.path.splitext(os.path.basename(input_path))
+        replacement_name, _ = os.path.splitext(os.path.basename(replacement_path))
+        input_name, input_extension = os.path.splitext(os.path.basename(input_path))
 
         if os.path.isdir(output_path):
-            return os.path.join(output_path, source_name + '-' + target_name + target_extension)
+            return os.path.join(output_path, replacement_name + '-' + input_name + input_extension)
 
     return output_path
 
