@@ -51,6 +51,9 @@ def extract_frames(input_path: str, fps: float = 30) -> bool:
     temp_directory_path = get_temp_directory_path(input_path)
     temp_frame_quality = roop.globals.temp_frame_quality * 31 // 100
 
+    # Example extract command line command
+    # ffmpeg -hide_banner -hwaccel auto -i ..\?.mp4 -q:v 0 -pix_fmt rgb24 -vf fps=30 %04d.png
+
     return run_ffmpeg(['-hwaccel', 'auto', '-i', input_path, '-q:v', str(temp_frame_quality), '-pix_fmt', 'rgb24', '-vf', 'fps=' + str(fps), os.path.join(temp_directory_path, '%04d.' + roop.globals.temp_frame_format)])
 
 
@@ -68,12 +71,18 @@ def create_video(input_path: str, fps: float = 30) -> bool:
 
     commands.extend(['-pix_fmt', 'yuv420p', '-vf', 'colorspace=bt709:iall=bt601-6-625:fast=1', '-y', temp_output_path])
 
+    # Example create video command line command
+    # ffmpeg -hide_banner -hwaccel auto -r 30 -i .\%04d.png -c:v libx264 -crf 0 -pix_fmt yuv420p -vf colorspace=bt709:iall=bt601-6-625:fast=1 -y x.mp4
+
     return run_ffmpeg(commands)
 
 
 def restore_audio(input_path: str, output_path: str) -> None:
     temp_output_path = get_temp_output_path(input_path)
     done = run_ffmpeg(['-i', temp_output_path, '-i', input_path, '-c:v', 'copy', '-map', '0:v:0', '-map', '1:a:0', '-y', output_path])
+
+    # Example restore command line command
+    # ffmpeg -hide_banner -hwaccel auto -i x.mp4 -i ..\?.mp4 -c:v copy -map 0:v:0 -map 1:a:0 -y y.mp4
 
     if not done:
         move_temp(input_path, output_path)
