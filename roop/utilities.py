@@ -61,8 +61,10 @@ def create_video(input_path: str, fps: float = 30) -> bool:
     temp_output_path = get_temp_output_path(input_path)
     temp_directory_path = get_temp_directory_path(input_path)
     start_number = get_start_number(temp_directory_path)
-    output_video_lossiness = (roop.globals.output_video_lossiness + 1) * 51 // 100
+
     commands = ['-hwaccel', 'auto', '-r', str(fps), '-start_number', start_number, '-i', os.path.join(temp_directory_path, '%04d.' + roop.globals.temp_frame_format), '-c:v', roop.globals.output_video_encoder]
+
+    output_video_lossiness = (roop.globals.output_video_lossiness + 1) * 51 // 100
 
     if roop.globals.output_video_encoder in ['libx264', 'libx265', 'libvpx']:
         commands.extend(['-crf', str(output_video_lossiness)])
@@ -80,10 +82,14 @@ def create_video(input_path: str, fps: float = 30) -> bool:
 
 def restore_audio(input_path: str, output_path: str) -> None:
     temp_output_path = get_temp_output_path(input_path)
-    done = run_ffmpeg(['-i', temp_output_path, '-i', input_path, '-c:v', 'copy', '-map', '0:v:0', '-map', '1:a:0', '-y', output_path])
+    temp_directory_path = get_temp_directory_path(input_path)
+    start_number = get_start_number(temp_directory_path)
+    frame_count = get_frame_count(temp_directory_path)
+
+    done = run_ffmpeg(['-i', temp_output_path, '-start_number', start_number, '-vframes', frame_count, '-i', input_path, '-c:v', 'copy', '-map', '0:v:0', '-map', '1:a:0', '-y', output_path])
 
     # Example restore command line command
-    # ffmpeg -hide_banner -hwaccel auto -i x.mp4 -i ..\net-clean.mp4 -c:v copy -map 0:v:0 -map 1:a:0 -y y.mp4
+    # ffmpeg -hide_banner -hwaccel auto -i x.mp4 -start_number 0001 -vframes 1000 -i ..\net-clean.mp4 -c:v copy -map 0:v:0 -map 1:a:0 -y y.mp4
 
     if not done:
         move_temp(input_path, output_path)
@@ -107,6 +113,10 @@ def get_temp_output_path(input_path: str) -> str:
 
 def get_start_number(directory_path: str) -> str:
     return min(glob.glob(directory_path + '/*.' + roop.globals.temp_frame_format)).split('/')[-1].split('.')[0]
+
+
+def get_frame_count(directory_path: str) -> int:
+    return len(glob.glob(directory_path + '/*.' + roop.globals.temp_frame_format))
 
 
 def normalize_output_path(replacement_path: str, input_path: str, output_path: str) -> Optional[str]:
