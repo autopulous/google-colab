@@ -10,6 +10,7 @@ keep_fps: Optional[bool] = None
 keep_frames: Optional[bool] = None
 reprocess_frames: Optional[bool] = None
 render_only: Optional[bool] = None
+skip_video: Optional[bool] = None
 skip_audio: Optional[bool] = None
 many_faces: Optional[bool] = None
 reference_face_position: Optional[int] = None

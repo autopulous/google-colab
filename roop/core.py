@@ -39,13 +39,14 @@ def parse_args() -> None:
     program.add_argument('-i', '--input', help='input image or video file', dest='input_path')
     program.add_argument('-r', '--replacement', help='replacement image file', dest='replacement_path')
     program.add_argument('-o', '--output', help='output file or directory', dest='output_path')
-    program.add_argument('--frame-processor', help='frame processors (choices: face_swapper, face_enhancer, ...)', dest='frame_processor', default=['face_swapper'], nargs='+')
+    program.add_argument('--frame-processors', help='frame processors (e.g., face_swapper, face_enhancer, ...)', dest='frame_processors', default=['face_swapper'], nargs='+')
     program.add_argument('--allow-nsfw', help='skip nsfw checks', dest='allow_nsfw', action='store_true')
     program.add_argument('--keep-fps', help='keep target fps', dest='keep_fps', action='store_true')
     program.add_argument('--keep-frames', help='keep temporary frames', dest='keep_frames', action='store_true')
     program.add_argument('--reprocess-frames', help='reprocess temporary frames', dest='reprocess_frames', action='store_true')
     program.add_argument('--render-only', help='only generate a video from the temporary frames', dest='render_only', action='store_true')
-    program.add_argument('--skip-audio', help='skip target audio', dest='skip_audio', action='store_true')
+    program.add_argument('--skip-video', help='skip video creation', dest='skip_video', action='store_true')
+    program.add_argument('--skip-audio', help='skip copying audio to video', dest='skip_audio', action='store_true')
     program.add_argument('--many-faces', help='process every face', dest='many_faces', action='store_true')
     program.add_argument('--reference-face-position', help='position of the reference face', dest='reference_face_position', type=int, default=0)
     program.add_argument('--reference-frame-number', help='number of the reference frame', dest='reference_frame_number', type=int, default=0)
@@ -65,12 +66,13 @@ def parse_args() -> None:
     roop.globals.replacement_path = args.replacement_path
     roop.globals.output_path = normalize_output_path(roop.globals.replacement_path, roop.globals.input_path, args.output_path)
     roop.globals.headless = roop.globals.replacement_path is not None and roop.globals.input_path is not None and roop.globals.output_path is not None
-    roop.globals.frame_processors = args.frame_processor
+    roop.globals.frame_processors = args.frame_processors
     roop.globals.allow_nsfw = args.allow_nsfw
     roop.globals.keep_fps = args.keep_fps
     roop.globals.keep_frames = args.keep_frames
     roop.globals.reprocess_frames = args.reprocess_frames
     roop.globals.render_only = args.render_only
+    roop.globals.skip_video = args.skip_video
     roop.globals.skip_audio = args.skip_audio
     roop.globals.many_faces = args.many_faces
     roop.globals.reference_face_position = args.reference_face_position
@@ -229,26 +231,27 @@ def process_video() -> None:
 
     # create video
 
-    if roop.globals.keep_fps:
-        fps = detect_fps(roop.globals.input_path)
-        update_status(f'Creating video with {fps} FPS...')
-        create_video(roop.globals.input_path, fps)
-    else:
-        update_status('Creating video with 30 FPS...')
-        create_video(roop.globals.input_path)
-
-    # handle audio
-
-    if roop.globals.skip_audio:
-        move_temp(roop.globals.input_path, roop.globals.output_path)
-        update_status('Skipping audio...')
-    else:
+    if not roop.globals.skip_video:
         if roop.globals.keep_fps:
-            update_status('Restoring audio...')
+            fps = detect_fps(roop.globals.input_path)
+            update_status(f'Creating video with {fps} FPS...')
+            create_video(roop.globals.input_path, fps)
         else:
-            update_status('Restoring audio might cause issues as fps are not kept...')
+            update_status('Creating video with 30 FPS...')
+            create_video(roop.globals.input_path)
 
-        restore_audio(roop.globals.input_path, roop.globals.output_path)
+        # handle audio
+
+        if roop.globals.skip_audio:
+            move_temp(roop.globals.input_path, roop.globals.output_path)
+            update_status('Skipping audio...')
+        else:
+            if roop.globals.keep_fps:
+                update_status('Restoring audio...')
+            else:
+                update_status('Restoring audio might cause issues as fps are not kept...')
+
+            restore_audio(roop.globals.input_path, roop.globals.output_path)
 
     # clean temp
 
