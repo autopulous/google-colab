@@ -44,7 +44,7 @@ def parse_args() -> None:
     program.add_argument('--keep-fps', help='keep target fps', dest='keep_fps', action='store_true')
     program.add_argument('--keep-frames', help='keep temporary frames', dest='keep_frames', action='store_true')
     program.add_argument('--reprocess-frames', help='reprocess temporary frames', dest='reprocess_frames', action='store_true')
-    program.add_argument('--render-only', help='only generate a video from the temporary frames', dest='render_only', action='store_false')
+    program.add_argument('--render-only', help='only generate a video from the temporary frames', dest='render_only', action='store_true')
     program.add_argument('--skip-audio', help='skip target audio', dest='skip_audio', action='store_true')
     program.add_argument('--many-faces', help='process every face', dest='many_faces', action='store_true')
     program.add_argument('--reference-face-position', help='position of the reference face', dest='reference_face_position', type=int, default=0)
@@ -213,9 +213,13 @@ def process_video() -> None:
 
     temp_frame_paths = get_temp_frame_paths(roop.globals.input_path)
 
+    update_status(f'Processing frames from: {temp_frame_paths}')
+
     if not temp_frame_paths:
         update_status('Frames not found...')
         return
+
+    update_status(f'render only: {roop.globals.render_only}')
 
     if not roop.globals.render_only:
         for frame_processor in get_frame_processors_modules(roop.globals.frame_processors):
