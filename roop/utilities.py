@@ -60,8 +60,9 @@ def extract_frames(input_path: str, fps: float = 30) -> bool:
 def create_video(input_path: str, fps: float = 30) -> bool:
     temp_output_path = get_temp_output_path(input_path)
     temp_directory_path = get_temp_directory_path(input_path)
+    start_number = get_start_number(temp_directory_path)
     output_video_lossiness = (roop.globals.output_video_lossiness + 1) * 51 // 100
-    commands = ['-hwaccel', 'auto', '-r', str(fps), '-i', os.path.join(temp_directory_path, '%04d.' + roop.globals.temp_frame_format), '-c:v', roop.globals.output_video_encoder]
+    commands = ['-hwaccel', 'auto', '-r', str(fps), '-start_number', start_number, '-i', os.path.join(temp_directory_path, '%04d.' + roop.globals.temp_frame_format), '-c:v', roop.globals.output_video_encoder]
 
     if roop.globals.output_video_encoder in ['libx264', 'libx265', 'libvpx']:
         commands.extend(['-crf', str(output_video_lossiness)])
@@ -72,7 +73,7 @@ def create_video(input_path: str, fps: float = 30) -> bool:
     commands.extend(['-pix_fmt', 'yuv420p', '-vf', 'colorspace=bt709:iall=bt601-6-625:fast=1', '-y', temp_output_path])
 
     # Example create video command line command
-    # ffmpeg -hide_banner -hwaccel auto -r 30 -i .\%04d.png -c:v libx264 -crf 0 -pix_fmt yuv420p -vf colorspace=bt709:iall=bt601-6-625:fast=1 -y x.mp4
+    # ffmpeg -hide_banner -hwaccel auto -r 30 -start_number 0001 -i .\%04d.png -c:v libx264 -crf 0 -pix_fmt yuv420p -vf colorspace=bt709:iall=bt601-6-625:fast=1 -y x.mp4
 
     return run_ffmpeg(commands)
 
@@ -102,6 +103,10 @@ def get_temp_directory_path(input_path: str) -> str:
 def get_temp_output_path(input_path: str) -> str:
     temp_directory_path = get_temp_directory_path(input_path)
     return os.path.join(temp_directory_path, TEMP_VIDEO_FILE)
+
+
+def get_start_number(directory_path: str) -> str:
+    return min(glob.glob(directory_path + '/*.' + roop.globals.temp_frame_format)).split('/')[-1].split('.')[0]
 
 
 def normalize_output_path(replacement_path: str, input_path: str, output_path: str) -> Optional[str]:
