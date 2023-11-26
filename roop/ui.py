@@ -14,7 +14,7 @@ from roop.capturer import get_video_frame, get_video_frame_total
 from roop.face_reference import get_face_reference, set_face_reference, clear_face_reference
 from roop.predictor import predict_frame, clear_predictor
 from roop.processors.frame.core import get_frame_processors_modules
-from roop.utilities import is_image, is_video, resolve_relative_path
+from roop.file import is_image, is_video, get_absolute_path
 
 ROOT = None
 ROOT_HEIGHT = 700
@@ -56,7 +56,7 @@ def create_root(start: Callable[[], None], destroy: Callable[[], None]) -> ctk.C
 
     ctk.deactivate_automatic_dpi_awareness()
     ctk.set_appearance_mode('system')
-    ctk.set_default_color_theme(resolve_relative_path('ui.json'))
+    ctk.set_default_color_theme(get_absolute_path('ui.json'))
 
     root = CTk()
     root.minsize(ROOT_WIDTH, ROOT_HEIGHT)

@@ -1,9 +1,8 @@
-#!/usr/bin/env python3
-
 import os
 import sys
 
-# single thread doubles cuda performance - needs to be set before torch import
+# single thread doubles cuda performance
+# this needs to be set before torch import
 
 if any(arg.startswith('--execution-provider') for arg in sys.argv):
     os.environ['OMP_NUM_THREADS'] = '1'
@@ -25,9 +24,10 @@ import roop.globals
 import roop.metadata
 import roop.ui as ui
 
+from roop.ffmpeg import detect_fps, extract_frames, create_video, restore_audio
+from roop.file import get_temp_directory_path, has_image_extension, is_image, is_video, get_temp_frame_file_paths, create_temp_directory, move_temp_file, clean_temp_directory, normalize_output_file_path
 from roop.predictor import predict_image, predict_video
 from roop.processors.frame.core import get_frame_processors_modules
-from roop.utilities import get_temp_directory_path, has_image_extension, is_image, is_video, detect_fps, create_video, extract_frames, get_start_position, get_frame_count, get_temp_frame_paths, restore_audio, create_temp, move_temp, clean_temp, normalize_output_path
 
 warnings.filterwarnings('ignore', category=FutureWarning, module='insightface')
 warnings.filterwarnings('ignore', category=UserWarning, module='torchvision')
@@ -64,7 +64,7 @@ def parse_args() -> None:
 
     roop.globals.input_path = args.input_path
     roop.globals.replacement_path = args.replacement_path
-    roop.globals.output_path = normalize_output_path(roop.globals.replacement_path, roop.globals.input_path, args.output_path)
+    roop.globals.output_path = normalize_output_file_path(roop.globals.replacement_path, roop.globals.input_path, args.output_path)
     roop.globals.headless = roop.globals.replacement_path is not None and roop.globals.input_path is not None and roop.globals.output_path is not None
     roop.globals.frame_processors = args.frame_processors
     roop.globals.allow_nsfw = args.allow_nsfw
@@ -190,7 +190,7 @@ def process_video() -> None:
 
     if not roop.globals.reprocess_frames and not roop.globals.render_only:
         update_status('Creating temporary directory...')
-        create_temp(roop.globals.input_path)
+        create_temp_directory(roop.globals.input_path)
 
         # extract frames
 
@@ -213,11 +213,11 @@ def process_video() -> None:
 
     # process frame
 
-    temp_frame_paths = get_temp_frame_paths(roop.globals.input_path)
+    temp_frame_file_paths = get_temp_frame_file_paths(roop.globals.input_path)
 
-    update_status(f'Processing frames from: {temp_frame_paths}')
+    update_status(f'Processing frames from: {temp_frame_file_paths}')
 
-    if not temp_frame_paths:
+    if not temp_frame_file_paths:
         update_status('Frames not found...')
         return
 
@@ -226,7 +226,7 @@ def process_video() -> None:
     if not roop.globals.render_only:
         for frame_processor in get_frame_processors_modules(roop.globals.frame_processors):
             update_status('Progressing...', frame_processor.NAME)
-            frame_processor.process_video(roop.globals.replacement_path, temp_frame_paths)
+            frame_processor.process_video(roop.globals.replacement_path, temp_frame_file_paths)
             frame_processor.post_process()
 
     # create video
@@ -243,7 +243,7 @@ def process_video() -> None:
         # handle audio
 
         if roop.globals.skip_audio:
-            move_temp(roop.globals.input_path, roop.globals.output_path)
+            move_temp_file(roop.globals.input_path, roop.globals.output_path)
             update_status('Skipping audio...')
         else:
             if roop.globals.keep_fps:
@@ -257,7 +257,7 @@ def process_video() -> None:
 
     update_status('Cleaning temporary resources...')
 
-    clean_temp(roop.globals.input_path)
+    clean_temp_directory(roop.globals.input_path)
 
     # validate video
 
@@ -287,7 +287,7 @@ def start() -> None:
 
 def destroy() -> None:
     if roop.globals.input_path:
-        clean_temp(roop.globals.input_path)
+        clean_temp_directory(roop.globals.input_path)
 
     sys.exit()
 

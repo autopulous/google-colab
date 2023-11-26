@@ -17,7 +17,6 @@ def get_face_analyser() -> Any:
         if FACE_ANALYSER is None:
             FACE_ANALYSER = insightface.app.FaceAnalysis(name='buffalo_l', providers=roop.globals.execution_providers)
             FACE_ANALYSER.prepare(ctx_id=0)
-
     return FACE_ANALYSER
 
 
@@ -34,7 +33,6 @@ def get_one_face(frame: Frame, position: int = 0) -> Optional[Face]:
             return many_faces[position]
         except IndexError:
             return many_faces[-1]
-
     return None
 
 
@@ -55,5 +53,4 @@ def find_similar_face(frame: Frame, reference_face: Face) -> Optional[Face]:
 
                 if distance < roop.globals.similar_face_distance:
                     return face
-
     return None
