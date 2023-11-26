@@ -87,7 +87,7 @@ def run_ffmpeg(args: List[str]) -> bool:
 
     try:
         print()
-        update_status('Issuing command', 'FFMPEG')
+        update_status('Issuing command', 'ROOP.FFMPEG')
 
         print()
         print(" ".join(map(str, commands)))
