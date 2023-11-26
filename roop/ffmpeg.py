@@ -2,6 +2,7 @@ import glob
 from typing import List
 import os
 import subprocess
+import time
 
 import roop.globals
 
@@ -38,9 +39,10 @@ def create_video(input_file_path: str, fps: float = 30) -> bool:
     commands = ['-hwaccel', 'auto', '-r', str(fps)]
 
     temp_directory_path = get_temp_directory_path(input_file_path)
+    first_frame_number = get_first_frame_number(temp_directory_path)
 
-    if 0 < get_first_frame_number(temp_directory_path):
-        commands.extend(['-ss', get_first_frame_time_index(temp_directory_path, fps)])
+    if 0 < int(first_frame_number):
+        commands.extend(['-start_number', first_frame_number])
 
     commands.extend(['-i', os.path.join(temp_directory_path, '%04d.' + roop.globals.temp_frame_format), '-c:v', roop.globals.output_video_encoder])
 
@@ -67,10 +69,10 @@ def restore_audio(input_file_path: str, output_path: str, fps: float = 30) -> No
 
     commands = ['-i', temp_output_path]
 
-    if 0 < get_first_frame_number(temp_directory_path):
+    if 0 < int(get_first_frame_number(temp_directory_path)):
         commands.extend(['-ss', get_first_frame_time_index(temp_directory_path, fps)])
 
-    commands.extend(['-i', input_file_path, '-shortest' '-c:v', 'copy', '-map', '0:v:0', '-map', '1:a:0', '-y', output_path])
+    commands.extend(['-i', input_file_path, '-shortest', '-c:v', 'copy', '-map', '0:v:0', '-map', '1:a:0', '-y', output_path])
 
     done = run_ffmpeg(commands)
 
@@ -83,12 +85,21 @@ def run_ffmpeg(args: List[str]) -> bool:
     commands.extend(args)
 
     try:
-        subprocess.check_output(commands, stderr=subprocess.STDOUT)
-        return True
-    except Exception:
-        pass
+        print()
+        print(" ".join(map(str, commands)))
+        print()
 
-    return False
+        start = time.time()
+        subprocess.check_output(commands, stderr=subprocess.STDOUT)
+        end = time.time()
+        print("Processing duration: ", format_time_index(end - start))
+        print()
+        return True
+    except Exception as exception:
+        print("Error: ffmpeg command failed")
+        print(exception)
+        print()
+        return False
 
 
 def format_time_index(position: float) -> str:
@@ -99,17 +110,17 @@ def format_time_index(position: float) -> str:
     seconds = int(position)
     position -= seconds
     milliseconds = int(position * 100)
-    return f'{hours:02}:{minutes:02}:{seconds:02}:{milliseconds:02}'
+    return f'{hours:02}:{minutes:02}:{seconds:02}.{milliseconds:02}'
 
 
-def get_first_frame_number(directory_path: str) -> int:
+def get_first_frame_number(directory_path: str) -> str:
     frame = min(glob.glob(directory_path + '/*.' + roop.globals.temp_frame_format)).split('/')[-1].split('.')[0]
     return frame
 
 
 def get_first_frame_time_index(directory_path: str, fps: float = 30) -> str:
-    position = get_first_frame_number(directory_path) / fps
-    return format_time_index(position)
+    first_frame_number = int(get_first_frame_number(directory_path)) / fps
+    return format_time_index(first_frame_number)
 
 
 def get_frame_count(directory_path: str) -> int:
@@ -118,7 +129,7 @@ def get_frame_count(directory_path: str) -> int:
 
 def get_last_frame_number(directory_path: str) -> int:
     frame_count = get_frame_count(directory_path)
-    first_frame_number = get_first_frame_number(directory_path)
+    first_frame_number = int(get_first_frame_number(directory_path))
     last_frame_number = first_frame_number + frame_count - 1
     return last_frame_number
 
