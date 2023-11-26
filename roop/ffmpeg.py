@@ -6,6 +6,7 @@ import time
 
 import roop.globals
 
+from roop.core import update_status
 from roop.file import get_temp_directory_path, get_temp_output_file_path, move_temp_file
 
 
@@ -85,6 +86,9 @@ def run_ffmpeg(args: List[str]) -> bool:
     commands.extend(args)
 
     try:
+        print()
+        update_status('Issuing command', 'FFMPEG')
+
         print()
         print(" ".join(map(str, commands)))
         print()

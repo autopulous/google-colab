@@ -268,15 +268,10 @@ def process_video() -> None:
 
 
 def start() -> None:
-    update_status('1')
-
     if not roop.globals.render_only:
         for frame_processor in get_frame_processors_modules(roop.globals.frame_processors):
             if not frame_processor.pre_start():
-                update_status('2')
                 return
-
-    update_status('3')
 
     if has_image_extension(roop.globals.input_path):
         process_image()
@@ -293,6 +288,8 @@ def destroy() -> None:
 
 
 def run() -> None:
+    print()
+
     parse_args()
 
     if not pre_check():
