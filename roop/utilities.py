@@ -60,9 +60,9 @@ def extract_frames(input_path: str, fps: float = 30) -> bool:
 def create_video(input_path: str, fps: float = 30) -> bool:
     temp_output_path = get_temp_output_path(input_path)
     temp_directory_path = get_temp_directory_path(input_path)
-    start_number = get_start_number(temp_directory_path)
+    start_position = get_start_position(temp_directory_path, fps)
 
-    commands = ['-hwaccel', 'auto', '-r', str(fps), '-start_number', start_number, '-i', os.path.join(temp_directory_path, '%04d.' + roop.globals.temp_frame_format), '-c:v', roop.globals.output_video_encoder]
+    commands = ['-hwaccel', 'auto', '-r', str(fps), '-ss', start_position, '-i', os.path.join(temp_directory_path, '%04d.' + roop.globals.temp_frame_format), '-c:v', roop.globals.output_video_encoder]
 
     output_video_lossiness = (roop.globals.output_video_lossiness + 1) * 51 // 100
 
@@ -83,13 +83,12 @@ def create_video(input_path: str, fps: float = 30) -> bool:
 def restore_audio(input_path: str, output_path: str) -> None:
     temp_output_path = get_temp_output_path(input_path)
     temp_directory_path = get_temp_directory_path(input_path)
-    start_number = get_start_number(temp_directory_path)
-    frame_count = get_frame_count(temp_directory_path)
+    start_position = get_start_position(temp_directory_path, fps)
 
-    done = run_ffmpeg(['-i', temp_output_path, '-start_number', start_number, '-vframes', frame_count, '-i', input_path, '-c:v', 'copy', '-map', '0:v:0', '-map', '1:a:0', '-y', output_path])
+    done = run_ffmpeg(['-i', temp_output_path, '-ss', start_position, '-i', input_path, '-shortest' '-c:v', 'copy', '-map', '0:v:0', '-map', '1:a:0', '-y', output_path])
 
     # Example restore command line command
-    # ffmpeg -hide_banner -hwaccel auto -i x.mp4 -start_number 0001 -vframes 1000 -i ..\net-clean.mp4 -c:v copy -map 0:v:0 -map 1:a:0 -y y.mp4
+    # ffmpeg -hide_banner -hwaccel auto -i /content/drive/MyDrive/Colab/input/temp/video.mp4 -ss 50 -i /content/drive/MyDrive/Colab/input/split-4.mp4 -shortest -c:v copy -map 0:v:0 -map 1:a:0 -y /content/drive/MyDrive/Colab/input/temp/merged.mp4
 
     if not done:
         move_temp(input_path, output_path)
@@ -111,8 +110,17 @@ def get_temp_output_path(input_path: str) -> str:
     return os.path.join(temp_directory_path, TEMP_VIDEO_FILE)
 
 
-def get_start_number(directory_path: str) -> str:
-    return min(glob.glob(directory_path + '/*.' + roop.globals.temp_frame_format)).split('/')[-1].split('.')[0]
+def get_start_position(directory_path: str, fps: float = 30) -> str:
+    frame = min(glob.glob(directory_path + '/*.' + roop.globals.temp_frame_format)).split('/')[-1].split('.')[0]
+    position = int(frame) / fps
+    hours = int(position / 3600)
+    position -= hours * 3600
+    minutes = int(position / 60)
+    position -= minutes * 60
+    seconds = int(position)
+    position -= seconds
+    milliseconds = int(position * 100)
+    return f'{hours:02}:{minutes:02}:{seconds:02}:{milliseconds:02}'
 
 
 def get_frame_count(directory_path: str) -> int:
