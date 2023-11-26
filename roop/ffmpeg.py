@@ -6,7 +6,7 @@ import time
 
 import roop.globals
 
-from roop.core import update_status
+from roop.progress import update_status
 from roop.file import get_temp_directory_path, get_temp_output_file_path, move_temp_file
 
 

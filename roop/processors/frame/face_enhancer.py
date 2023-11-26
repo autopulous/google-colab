@@ -6,11 +6,11 @@ from gfpgan.utils import GFPGANer
 import roop.globals
 import roop.processors.frame.core
 
-from roop.core import update_status
 from roop.download import conditional_download
 from roop.face_analyser import get_many_faces
-from roop.typing import Frame, Face
 from roop.file import get_absolute_path, is_image, is_video
+from roop.typing import Frame, Face
+from roop.progress import update_status
 
 FACE_ENHANCER = None
 THREAD_SEMAPHORE = threading.Semaphore()

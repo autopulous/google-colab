@@ -28,6 +28,7 @@ from roop.ffmpeg import detect_fps, extract_frames, create_video, restore_audio
 from roop.file import get_temp_directory_path, has_image_extension, is_image, is_video, get_temp_frame_file_paths, create_temp_directory, move_temp_file, clean_temp_directory, normalize_output_file_path
 from roop.predictor import predict_image, predict_video
 from roop.processors.frame.core import get_frame_processors_modules
+from roop.progress import update_status
 
 warnings.filterwarnings('ignore', category=FutureWarning, module='insightface')
 warnings.filterwarnings('ignore', category=UserWarning, module='torchvision')
@@ -144,13 +145,6 @@ def pre_check() -> bool:
         return False
 
     return True
-
-
-def update_status(message: str, scope: str = 'ROOP.CORE') -> None:
-    print(f'[{scope}] {message}')
-
-    if not roop.globals.headless:
-        ui.update_status(message)
 
 
 def process_image() -> None:

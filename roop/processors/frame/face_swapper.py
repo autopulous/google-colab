@@ -6,12 +6,12 @@ import threading
 import roop.globals
 import roop.processors.frame.core
 
-from roop.core import update_status
 from roop.download import conditional_download
 from roop.face_analyser import get_one_face, get_many_faces, find_similar_face
 from roop.face_reference import get_face_reference, set_face_reference, clear_face_reference
-from roop.typing import Face, Frame
 from roop.file import get_absolute_path, is_image, is_video
+from roop.typing import Face, Frame
+from roop.progress import update_status
 
 FACE_SWAPPER = None
 THREAD_LOCK = threading.Lock()
