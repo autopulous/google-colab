@@ -11,8 +11,10 @@ if any(arg.startswith('--execution-provider') for arg in sys.argv):
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
-import warnings
+from time import gmtime, strftime
 from typing import List
+
+import warnings
 import platform
 import signal
 import shutil
@@ -278,10 +280,16 @@ def destroy() -> None:
     if roop.globals.input_path:
         clean_temp_directory(roop.globals.input_path)
 
+    print()
+    print('Ended: ' + strftime("%Y-%m-%d %H:%M:%S", gmtime()))
+    print()
+
     sys.exit()
 
 
 def run() -> None:
+    print()
+    print('Started: ' + strftime("%Y-%m-%d %H:%M:%S", gmtime()))
     print()
 
     parse_args()
@@ -300,3 +308,7 @@ def run() -> None:
     else:
         window = ui.init(start, destroy)
         window.mainloop()
+
+    print()
+    print('Ended: ' + strftime("%Y-%m-%d %H:%M:%S", gmtime()))
+    print()
