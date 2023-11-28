@@ -55,8 +55,8 @@ def create_video(input_file_path: str, fps: float = 30) -> bool:
     if roop.globals.output_video_encoder in ['h264_nvenc', 'hevc_nvenc']:
         commands.extend(['-cq', str(output_video_lossiness)])
 
-    temp_output_path = get_temp_output_file_path(input_file_path)
-    commands.extend(['-pix_fmt', 'yuv420p', '-vf', 'colorspace=bt709:iall=bt601-6-625:fast=1', '-y', temp_output_path])
+    temp_output_file_path = get_temp_output_file_path(input_file_path)
+    commands.extend(['-pix_fmt', 'yuv420p', '-vf', 'colorspace=bt709:iall=bt601-6-625:fast=1', '-y', temp_output_file_path])
 
     return run_ffmpeg(commands)
 
@@ -64,21 +64,21 @@ def create_video(input_file_path: str, fps: float = 30) -> bool:
 # Example restore command line command
 # ffmpeg -hide_banner -hwaccel auto -i /content/drive/MyDrive/Colab/input/temp/video.mp4 -ss 00:00:50:00 -i /content/drive/MyDrive/Colab/input/original.mp4 -shortest -c:v copy -map 0:v:0 -map 1:a:0 -y /content/drive/MyDrive/Colab/input/temp/merged.mp4
 
-def restore_audio(input_file_path: str, output_path: str, fps: float = 30) -> None:
-    temp_output_path = get_temp_output_file_path(input_file_path)
+def restore_audio(input_file_path: str, output_file_path: str, fps: float = 30) -> None:
+    temp_output_file_path = get_temp_output_file_path(input_file_path)
     temp_directory_path = get_temp_directory_path(input_file_path)
 
-    commands = ['-i', temp_output_path]
+    commands = ['-i', temp_output_file_path]
 
     if 0 < int(get_first_frame_number(temp_directory_path)):
         commands.extend(['-ss', get_first_frame_time_index(temp_directory_path, fps)])
 
-    commands.extend(['-i', input_file_path, '-shortest', '-c:v', 'copy', '-map', '0:v:0', '-map', '1:a:0', '-y', output_path])
+    commands.extend(['-i', input_file_path, '-shortest', '-c:v', 'copy', '-map', '0:v:0', '-map', '1:a:0', '-y', output_file_path])
 
     done = run_ffmpeg(commands)
 
     if not done:
-        move_temp_file(input_file_path, output_path)
+        move_temp_file(input_file_path, output_file_path)
 
 
 def run_ffmpeg(args: List[str]) -> bool:
