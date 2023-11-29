@@ -1,5 +1,6 @@
 from typing import Any, List, Callable
 import cv2
+import os
 import threading
 from gfpgan.utils import GFPGANer
 
@@ -8,7 +9,7 @@ import roop.processors.frame.core
 
 from roop.download import conditional_download
 from roop.face_analyser import get_many_faces
-from roop.file import get_absolute_path, is_image, is_video
+from roop.file import get_absolute_path, get_temp_directory_path, is_image, is_video
 from roop.typing import Frame, Face
 from roop.progress import update_status
 
@@ -54,9 +55,15 @@ def pre_check() -> bool:
 
 
 def pre_start() -> bool:
-    if not is_image(roop.globals.input_path) and not is_video(roop.globals.input_path):
-        update_status('Select an image or video for target path.', NAME)
-        return False
+    if roop.globals.reprocess_frames:
+        temp_frame_file_path = get_temp_directory_path(roop.globals.input_path)
+        if not os.path.exists(temp_frame_file_path) or not os.path.isdir(temp_frame_file_path):
+            update_status(f'Extracted video frames cannot be found in: {temp_frame_file_path}', NAME)
+            return False
+    else:
+        if not is_image(roop.globals.input_path) and not is_video(roop.globals.input_path):
+            update_status('Select an image or video for target path.', NAME)
+            return False
 
     return True
 
