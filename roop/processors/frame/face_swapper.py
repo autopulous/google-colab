@@ -91,7 +91,7 @@ def process_frames(replacement_path: str, temp_frame_paths: List[str], update: C
     source_face = get_one_face(cv2.imread(replacement_path))
     reference_face = None if roop.globals.many_faces else get_face_reference()
 
-    for temp_frame_path in temp_frame_paths:
+    for temp_frame_path in temp_frame_paths.sort():
         temp_frame = cv2.imread(temp_frame_path)
         result = process_frame(source_face, reference_face, temp_frame)
         cv2.imwrite(temp_frame_path, result)
@@ -110,7 +110,7 @@ def process_image(replacement_path: str, input_path: str, output_path: str) -> N
 
 def process_video(replacement_path: str, temp_frame_paths: List[str]) -> None:
     if not roop.globals.many_faces and not get_face_reference():
-        reference_frame = cv2.imread(temp_frame_paths[roop.globals.reference_frame_number])
+        reference_frame = cv2.imread(temp_frame_paths.sort()[roop.globals.reference_frame_number])
         reference_face = get_one_face(reference_frame, roop.globals.reference_face_position)
         set_face_reference(reference_face)
 
