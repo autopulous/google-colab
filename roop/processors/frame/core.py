@@ -74,7 +74,7 @@ def pick_queue(queue: Queue[str], queue_per_future: int) -> List[str]:
 
 def process_video(replacement_path: str, frame_paths: list[str], process_frames: Callable[[str, List[str], Any], None]) -> None:
     progress_bar_format = '{l_bar}{bar}| {n_fmt}/{total_fmt} [{elapsed}<{remaining}, {rate_fmt}{postfix}]'
-    total = len(frame_paths.sort())
+    total = len(frame_paths)
     with tqdm(total=total, desc='Processing', unit='frame', dynamic_ncols=True, bar_format=progress_bar_format) as progress:
         multi_process_frame(replacement_path, frame_paths.sort(), process_frames, lambda: update_progress(progress))
 
