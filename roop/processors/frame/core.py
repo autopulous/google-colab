@@ -46,9 +46,11 @@ def get_frame_processors_modules(frame_processors: List[str]) -> List[ModuleType
 
 
 def multi_process_frame(replacement_path: str, temp_frame_paths: List[str], process_frames: Callable[[str, List[str], Any], None], update: Callable[[], None]) -> None:
+    temp_frame_paths.sort()
+
     with ThreadPoolExecutor(max_workers=roop.globals.execution_threads) as executor:
         futures = []
-        queue = create_queue(temp_frame_paths.sort())
+        queue = create_queue(temp_frame_paths)
         queue_per_future = max(len(temp_frame_paths) // roop.globals.execution_threads, 1)
         while not queue.empty():
             future = executor.submit(process_frames, replacement_path, pick_queue(queue, queue_per_future), update)
