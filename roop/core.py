@@ -27,7 +27,7 @@ import roop.metadata
 import roop.ui as ui
 
 from roop.ffmpeg import detect_fps, extract_frames, create_video, restore_audio
-from roop.file import get_temp_directory_path, has_image_extension, is_image, is_video, get_temp_frame_file_paths, create_temp_directory, move_temp_file, clean_temp_directory, normalize_output_file_path
+from roop.file import get_temp_directory_path, has_image_extension, is_image, is_video, get_sorted_frame_file_paths, create_temp_directory, move_temp_file, clean_temp_directory, normalize_output_file_path
 from roop.predictor import predict_image, predict_video
 from roop.processors.frame.core import get_frame_processors_modules
 from roop.progress import update_status
@@ -209,11 +209,11 @@ def process_video() -> None:
 
     # process frame
 
-    temp_frame_file_paths = get_temp_frame_file_paths(roop.globals.input_path)
+    sorted_frame_file_paths = get_sorted_frame_file_paths(roop.globals.input_path)
 
-    update_status(f'Processing frames from: {temp_frame_file_paths}')
+    update_status(f'Processing frames from: {sorted_frame_file_paths}')
 
-    if not temp_frame_file_paths:
+    if not sorted_frame_file_paths:
         update_status('Frames not found...')
         return
 
@@ -222,7 +222,7 @@ def process_video() -> None:
     if not roop.globals.render_only:
         for frame_processor in get_frame_processors_modules(roop.globals.frame_processors):
             update_status('Progressing...', frame_processor.NAME)
-            frame_processor.process_video(roop.globals.replacement_path, temp_frame_file_paths)
+            frame_processor.process_video(roop.globals.replacement_path, sorted_frame_file_paths)
             frame_processor.post_process()
 
     # create video

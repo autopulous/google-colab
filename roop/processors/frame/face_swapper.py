@@ -11,7 +11,7 @@ import roop.processors.frame.core
 from roop.download import conditional_download
 from roop.face_analyser import get_one_face, get_many_faces, find_similar_face
 from roop.face_reference import get_face_reference, set_face_reference, clear_face_reference
-from roop.file import get_absolute_path, get_temp_directory_path, get_temp_frame_file_paths, is_image, is_video
+from roop.file import get_absolute_path, get_temp_directory_path, is_image, is_video
 from roop.typing import Face, Frame
 from roop.progress import update_status
 
@@ -52,9 +52,9 @@ def pre_start() -> bool:
         return False
 
     if roop.globals.reprocess_frames:
-        temp_frame_file_path = get_temp_directory_path(roop.globals.input_path)
-        if not os.path.exists(temp_frame_file_path) or not os.path.isdir(temp_frame_file_path):
-            update_status(f'Extracted video frames cannot be found in: {temp_frame_file_path}', NAME)
+        temp_directory_path = get_temp_directory_path(roop.globals.input_path)
+        if not os.path.exists(temp_directory_path) or not os.path.isdir(temp_directory_path):
+            update_status(f'Extracted video frames cannot be found in: {temp_directory_path}', NAME)
             return False
     else:
         if not is_image(roop.globals.input_path) and not is_video(roop.globals.input_path):
@@ -87,16 +87,14 @@ def process_frame(source_face: Face, reference_face: Face, temp_frame: Frame) ->
     return temp_frame
 
 
-def process_frames(replacement_path: str, temp_frame_paths: List[str], update: Callable[[], None]) -> None:
+def process_frames(replacement_path: str, sorted_frame_file_paths: List[str], update: Callable[[], None]) -> None:
     source_face = get_one_face(cv2.imread(replacement_path))
     reference_face = None if roop.globals.many_faces else get_face_reference()
 
-    temp_frame_paths.sort()
-
-    for temp_frame_path in temp_frame_paths:
-        temp_frame = cv2.imread(temp_frame_path)
+    for frame_file_path in sorted_frame_file_paths:
+        temp_frame = cv2.imread(frame_file_path)
         result = process_frame(source_face, reference_face, temp_frame)
-        cv2.imwrite(temp_frame_path, result)
+        cv2.imwrite(frame_file_path, result)
 
         if update:
             update()
@@ -110,12 +108,10 @@ def process_image(replacement_path: str, input_path: str, output_path: str) -> N
     cv2.imwrite(output_path, result)
 
 
-def process_video(replacement_path: str, temp_frame_paths: List[str]) -> None:
-    temp_frame_paths.sort()
-
+def process_video(replacement_path: str, sorted_frame_file_paths: List[str]) -> None:
     if not roop.globals.many_faces and not get_face_reference():
-        reference_frame = cv2.imread(temp_frame_paths[roop.globals.reference_frame_number])
+        reference_frame = cv2.imread(sorted_frame_file_paths[roop.globals.reference_frame_number])
         reference_face = get_one_face(reference_frame, roop.globals.reference_face_position)
         set_face_reference(reference_face)
 
-    roop.processors.frame.core.process_video(replacement_path, temp_frame_paths, process_frames)
+    roop.processors.frame.core.process_video(replacement_path, sorted_frame_file_paths, process_frames)
