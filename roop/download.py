@@ -8,7 +8,9 @@ def conditional_download(download_directory_path: str, urls: List[str]) -> None:
     if not os.path.exists(download_directory_path):
         os.makedirs(download_directory_path)
 
-    for url in urls.sort():
+    urls.sort()
+
+    for url in urls:
         download_file_path = os.path.join(download_directory_path, os.path.basename(url))
 
         if not os.path.exists(download_file_path):

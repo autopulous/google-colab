@@ -18,7 +18,7 @@ def get_absolute_path(path: str) -> str:
 
 def get_temp_frame_file_paths(input_file_path: str) -> List[str]:
     temp_directory_path = get_temp_directory_path(input_file_path)
-    return glob.glob((os.path.join(glob.escape(temp_directory_path), '*.' + roop.globals.temp_frame_format))).sort()
+    return sorted(glob.glob((os.path.join(glob.escape(temp_directory_path), '*.' + roop.globals.temp_frame_format))))
 
 
 def get_temp_directory_path(input_file_path: str) -> str:
